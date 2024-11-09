@@ -1,16 +1,137 @@
 // Elements from the DOM
-const matrixElement = document.getElementById('matrix');
+var matrixElement 
 const sequencesList = document.getElementById('sequences-list');
-const lineOverlay = document.getElementById('line-overlay'); // SVG element
+var lineOverlay 
+const matchedSequences = document.getElementById('matched-sequences')
 
-const sequencesData = predefinedSequences.map(sequence => {
-    const lettersInSequence = sequence.map(pos => letters[pos.row][pos.col]).join('');
-    return {
-        positions: sequence,
-        letters: lettersInSequence,
-        matched: false
-    };
-});
+const clearedLevelsListName = "clearedLevelsList"
+// Keep track of selected cells and dragging state
+let selectedCells = [];
+let isDragging = false;
+
+let letters, predefinedSequences, sequencesData, theme;
+
+// Define an async function to load the JSON data
+async function loadData() {
+    try {
+        const gameContainer = document.getElementById('game-container');
+        gameContainer.innerHTML = ''; // Clear out any old win message
+        win_all_div = document.getElementById("win-all-message")
+        win_all_div.innerHTML = ''
+        
+        const metaDataResponse = await fetch('static/levels/metadata.json');
+        const metadata = await metaDataResponse.json();
+        const levels = metadata.avilable_levels
+        
+        if (!localStorage.getItem(clearedLevelsListName)) {
+            filterList = []
+        } else {
+            filterList = JSON.parse(localStorage.getItem(clearedLevelsListName));
+        }
+
+        const finishedAll = levels.every(value => filterList.includes(value));
+        if (finishedAll) {
+            finishedAllMessage = document.createElement("h2")
+            finishedAllMessage.innerHTML = "Ser ut som att du klarat alla nivåer<br>låter dig spela om gamla nivåer :)"
+            document.getElementById("win-all-message").appendChild(finishedAllMessage)
+            filteredList = levels
+        }else {   
+            // Create filteredList by removing any items from levels that are also in filterList
+            filteredList = levels.filter(level => !filterList.includes(level));
+        }
+
+
+        // Check if all values in valueList are present in filterList
+
+
+        const randomFile = filteredList[Math.floor(Math.random() * filteredList.length)];
+
+
+
+        // Create the SVG element
+        lineOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        lineOverlay.id = "line-overlay";
+
+        // Create the inner matrix div
+        matrixElement = document.createElement("div");
+        matrixElement.id = "matrix";
+
+        // Append SVG and matrix div to the game container
+        gameContainer.appendChild(lineOverlay);
+        gameContainer.appendChild(matrixElement);
+        const response = await fetch(`static/levels/${randomFile}.json`);
+        const data = await response.json();
+        
+        // Assign data to variables
+        letters = data.matrix;
+        predefinedSequences = data.sequence_positions;
+        theme = data.theme 
+
+        matchedSequenceThemeHeading = document.getElementById("theme_header")
+        matchedSequenceThemeHeading.textContent = `Tema : ${theme}`
+
+
+        sequencesData = predefinedSequences.map(sequence => {
+            const lettersInSequence = sequence.map(pos => letters[pos.row][pos.col]).join('');
+            return {
+                positions: sequence,
+                letters: lettersInSequence,
+                matched: false
+            };
+        });
+
+        renderSequencesList();
+
+        // Create the matrix cells
+        letters.forEach((row, rowIndex) => {
+            row.forEach((letter, colIndex) => {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.row = rowIndex;
+                cell.dataset.col = colIndex;
+                cell.dataset.letter = letter;
+
+                // Create the clickable area
+                const clickableArea = document.createElement('div');
+                clickableArea.classList.add('clickable-area');
+
+                cell.appendChild(clickableArea);
+                matrixElement.appendChild(cell);
+            });
+        });
+
+        // Event listener to detect clicks outside the matrix
+        document.body.addEventListener('click', function(event) {
+            const isClickInsideMatrix = matrixElement.contains(event.target);
+            if (!isClickInsideMatrix) {
+                // Reset selection if clicked outside the matrix
+                resetSelection();
+            }
+        });
+
+        // Event delegation to detect clicks on cells (including removed cells)
+        matrixElement.addEventListener('click', function(event) {
+            const cell = event.target.closest('.cell'); // Find the closest parent with the class 'cell'
+            if (cell) {
+                if (cell.classList.contains('removed')) {
+                    // Reset selection if clicked on a removed cell
+                    console.log("Resetting selection due to click on removed cell");
+                    resetSelection();
+                }
+            }
+        });
+
+        // Prevent click events on the matrix from bubbling up to the body
+        matrixElement.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+    } catch (error) {
+        console.error('Error loading JSON:', error);
+    }
+}
+
+
+loadData()
 
 
 function renderSequencesList() {
@@ -26,7 +147,7 @@ function renderSequencesList() {
             listItem.classList.add('matched');
         } else {
             // Display the number of letters in a grey bubble
-            listItem.textContent = sequence.letters.length + " letters";
+            listItem.textContent = sequence.letters.length + " bokstäver";
             listItem.classList.add('unmatched');
         }
 
@@ -83,31 +204,6 @@ function drawLineThroughSelectedCells() {
 
     lineOverlay.appendChild(polyline);
 }
-
-// Keep track of selected cells and dragging state
-let selectedCells = [];
-let isDragging = false;
-
-
-renderSequencesList();
-
-// Create the matrix cells
-letters.forEach((row, rowIndex) => {
-    row.forEach((letter, colIndex) => {
-        const cell = document.createElement('div');
-        cell.classList.add('cell');
-        cell.dataset.row = rowIndex;
-        cell.dataset.col = colIndex;
-        cell.dataset.letter = letter;
-
-        // Create the clickable area
-        const clickableArea = document.createElement('div');
-        clickableArea.classList.add('clickable-area');
-
-        cell.appendChild(clickableArea);
-        matrixElement.appendChild(cell);
-    });
-});
 
 // Initialize Interact.js on the clickable areas
 interact('.clickable-area')
@@ -171,8 +267,6 @@ function endSelection(event) {
 
 // Function to select or unselect a cell
 function selectCell(cell) {
-    console.log(cell)
-    console.log(selectedCells)
     if (cell.classList.contains('removed')) {
         // If the cell is removed, reset the entire selection
         resetSelection();
@@ -199,33 +293,6 @@ function selectCell(cell) {
     // Check for matching sequences
     checkSequence();
 }
-
-// Event listener to detect clicks outside the matrix
-document.body.addEventListener('click', function(event) {
-    const isClickInsideMatrix = matrixElement.contains(event.target);
-    if (!isClickInsideMatrix) {
-        // Reset selection if clicked outside the matrix
-        resetSelection();
-    }
-});
-
-// Event delegation to detect clicks on cells (including removed cells)
-matrixElement.addEventListener('click', function(event) {
-    const cell = event.target.closest('.cell'); // Find the closest parent with the class 'cell'
-    if (cell) {
-        if (cell.classList.contains('removed')) {
-            // Reset selection if clicked on a removed cell
-            console.log("Resetting selection due to click on removed cell");
-            resetSelection();
-        }
-    }
-});
-
-// Prevent click events on the matrix from bubbling up to the body
-matrixElement.addEventListener('click', function(event) {
-    event.stopPropagation();
-});
-
 
 // Function to reset selection
 function resetSelection(resetDragging = true) {
@@ -330,11 +397,34 @@ function displayWinMessage() {
     // Clear the game container
     gameContainer.innerHTML = `
         <div id="win-message">
-            <h1>YAY, you won! <span class="emoji">🎉</span><span class="emoji">🎉</span><span class="emoji">🎉</span></h1>
-        </div> `
-    ;
-    superConfetti(5)
+            <h1> Yay! du klarade nivån, duktigt! <span class="emoji">🎉</span><span class="emoji">🎉</span><span class="emoji">🎉</span></h1>
+            <button id="load-data-button" class="replay_button">Spela igen</button>
+        </div>
+    `;
 
+    // Check if the key exists in localStorage
+    if (!localStorage.getItem(clearedLevelsListName)) {
+        // If the key doesn't exist, initialize it as an empty list (array)
+        localStorage.setItem(clearedLevelsListName, JSON.stringify([]));
+    }
+
+    let clearedLevelsList = JSON.parse(localStorage.getItem(clearedLevelsListName));
+    // Check if the value is already in the list
+    if (!clearedLevelsList.includes(theme)) {
+        // If the value is not in the list, add it
+        clearedLevelsList.push(theme);
+
+        // Save the updated list back to localStorage
+        localStorage.setItem(clearedLevelsListName, JSON.stringify(clearedLevelsList));
+    }
+
+
+    // Add an event listener to the button to call loadData when clicked
+    const loadDataButton = document.getElementById('load-data-button');
+    loadDataButton.addEventListener('click', loadData);
+
+    // Call superConfetti
+    superConfetti(5);
 }
 
 function checkWinCondition() {

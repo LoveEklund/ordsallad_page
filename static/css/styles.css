@@ -1,6 +1,7 @@
 /* Apply sans-serif font to all text on the page */
 body {
     font-family: Arial, Helvetica, sans-serif;
+    overflow: hidden; /* Disable scrolling on the body */
     /* Optional: You can set a base font size or other font properties here */
     /* font-size: 16px; */
 }
@@ -29,6 +30,7 @@ body {
     grid-template-columns: repeat(5, 50px);
     grid-gap: 5px;
     z-index: 1;
+    touch-action: none;
 }
 
 /* Cell styles */
@@ -71,6 +73,12 @@ body {
     width: fit-content; /* Adjust width to fit content */
 }
 
+#win-all-message {
+    margin: 20px auto; /* Center the section */
+    text-align: center; /* Center the text inside */
+    width: fit-content; /* Adjust width to fit content */
+}
+
 .cell.selected {
     /* Optionally, add a subtle border */
 }
@@ -102,6 +110,24 @@ body {
     font-size: 18px;
     text-align: center;
 }
+
+.replay_button {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 25px;
+    background-color: yellow;
+    color: white;
+    font-size: 18px;
+    text-align: center;
+    border: none; /* Remove default border */
+    cursor: pointer; /* Change cursor to pointer on hover */
+    transition: background-color 0.3s ease; /* Add a transition for background color */
+}
+
+.replay_button:hover {
+    background-color: yellowgreen; /* Change color on hover */
+}
+
 
 /* Unmatched sequences */
 .sequence-item.unmatched {
