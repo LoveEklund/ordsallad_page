@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ordsallad</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
+    </head>
+<body>
+    <div id="game-container">
+        <svg id="line-overlay"></svg>
+        <div id="matrix"></div>
+    </div>
+    <div id="matched-sequences">
+        <h2>Tema: Frukter</h2>
+        <ul id="sequences-list"></ul>
+    </div>
+
+    <!-- Pass data to JavaScript -->
+    <script type="text/javascript">
+        const letters = [
+            [
+                "h",
+                "u",
+                "n",
+                "d",
+                "u"
+            ],
+            [
+                "e",
+                "t",
+                "a",
+                "l",
+                "j"
+            ],
+            [
+                "l",
+                "e",
+                "f",
+                "o",
+                "a"
+            ],
+            [
+                "a",
+                "p",
+                "g",
+                "r",
+                "s"
+            ],
+            [
+                "p",
+                "v",
+                "a",
+                "l",
+                "s"
+            ]
+        ];
+        const predefinedSequences = [
+            [
+                {
+                    "row": 0,
+                    "col": 0
+                },
+                {
+                    "row": 0,
+                    "col": 1
+                },
+                {
+                    "row": 0,
+                    "col": 2
+                },
+                {
+                    "row": 0,
+                    "col": 3
+                },
+                {
+                    "row": 0,
+                    "col": 4
+                }
+            ],
+            [
+                {
+                    "row": 1,
+                    "col": 0
+                },
+                {
+                    "row": 1,
+                    "col": 1
+                },
+                {
+                    "row": 1,
+                    "col": 2
+                },
+                {
+                    "row": 1,
+                    "col": 3
+                }
+            ],
+            [
+                {
+                    "row": 1,
+                    "col": 4
+                },
+                {
+                    "row": 2,
+                    "col": 3
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                },
+                {
+                    "row": 2,
+                    "col": 1
+                },
+                {
+                    "row": 2,
+                    "col": 0
+                }
+            ],
+            [
+                {
+                    "row": 2,
+                    "col": 3
+                },
+                {
+                    "row": 2,
+                    "col": 2
+                },
+                {
+                    "row": 2,
+                    "col": 1
+                },
+                {
+                    "row": 2,
+                    "col": 0
+                },
+                {
+                    "row": 3,
+                    "col": 0
+                },
+                {
+                    "row": 3,
+                    "col": 1
+                }
+            ],
+            [
+                {
+                    "row": 2,
+                    "col": 4
+                },
+                {
+                    "row": 3,
+                    "col": 3
+                },
+                {
+                    "row": 3,
+                    "col": 2
+                },
+                {
+                    "row": 4,
+                    "col": 1
+                },
+                {
+                    "row": 4,
+                    "col": 0
+                }
+            ],
+            [
+                {
+                    "row": 3,
+                    "col": 4
+                },
+                {
+                    "row": 4,
+                    "col": 3
+                },
+                {
+                    "row": 4,
+                    "col": 2
+                },
+                {
+                    "row": 4,
+                    "col": 1
+                },
+                {
+                    "row": 4,
+                    "col": 0
+                }
+            ]
+        ];
+    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
