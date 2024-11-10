@@ -11,43 +11,94 @@ let isDragging = false;
 
 let letters, predefinedSequences, sequencesData, theme;
 
+// StateManager for handling localStorage interactions
+const StateManager = {
+    storageKey: 'levelsState',
+
+    getLevelsState: function() {
+        let levelsState = localStorage.getItem(this.storageKey);
+        if (levelsState) {
+            return JSON.parse(levelsState);
+        } else {
+            return {};
+        }
+    },
+
+    saveLevelsState: function(levelsState) {
+        localStorage.setItem(this.storageKey, JSON.stringify(levelsState));
+    },
+
+    loadLevelState: function(levelName) {
+        const levelsState = this.getLevelsState();
+        return levelsState[levelName] || { matchedSequences: [] };
+    },
+
+    saveLevelState: function(levelName, state) {
+        const levelsState = this.getLevelsState();
+        levelsState[levelName] = state;
+        this.saveLevelsState(levelsState);
+    }
+};
+
 // Define an async function to load the JSON data
-async function loadData() {
+async function loadData(load_random) {
     try {
+        // Check if this is the user's first visit
+        const isFirstTime = localStorage.getItem('firstTime');
+    
+        if (!isFirstTime) {
+            // Show the "How To" overlay if it's the first visit
+            const howToOverlay = document.getElementById('how-to-overlay');
+            howToOverlay.style.display = 'flex';
+
+            // Set 'firstTime' in localStorage so it doesn't show next time
+            localStorage.setItem('firstTime', 'no');
+        }
+
         const gameContainer = document.getElementById('game-container');
         gameContainer.innerHTML = ''; // Clear out any old win message
-        win_all_div = document.getElementById("win-all-message")
-        win_all_div.innerHTML = ''
-        
+        const winMessageContainer = document.getElementById('win-message');
+        winMessageContainer.innerHTML = ''; // Clear out any old win message
+    
         const metaDataResponse = await fetch('static/levels/metadata.json');
         const metadata = await metaDataResponse.json();
-        const levels = metadata.avilable_levels
+        const levels = metadata.avilable_levels;
         
-        if (!localStorage.getItem(clearedLevelsListName)) {
-            filterList = []
-        } else {
-            filterList = JSON.parse(localStorage.getItem(clearedLevelsListName));
-        }
+        // Load the list of cleared levels from localStorage
+        const clearedLevels = localStorage.getItem(clearedLevelsListName) 
+            ? JSON.parse(localStorage.getItem(clearedLevelsListName))
+            : [];
 
-        const finishedAll = levels.every(value => filterList.includes(value));
+
+        const finishedAll = levels.every(value => clearedLevels.includes(value));     
+        const totalLevels = levels.length;
+
+        let filteredList;
         if (finishedAll) {
-            finishedAllMessage = document.createElement("h2")
-            finishedAllMessage.innerHTML = "Ser ut som att du klarat alla nivåer<br>låter dig spela om gamla nivåer :)"
-            document.getElementById("win-all-message").appendChild(finishedAllMessage)
-            filteredList = levels
-        }else {   
+            filteredList = levels; // Allow replaying all levels if all are finished
+        } else {
             // Create filteredList by removing any items from levels that are also in filterList
-            filteredList = levels.filter(level => !filterList.includes(level));
+            filteredList = levels.filter(level => !clearedLevels.includes(level));
+        }
+        // Check for a currently played level
+        let currentLevel = localStorage.getItem('currentLevel');    
+        // If no current level, pick the next level from filteredList
+        if (!currentLevel || !filteredList.includes(currentLevel)) {
+            currentLevel = filteredList[filteredList.length - 1];
+        } else {
+            currentLevel = levels[levels.length - 1]
+        }
+        let currentLevelIndex = levels.indexOf(currentLevel) + 1 
+
+        const levelIndicator = document.getElementById('level-indicator');
+
+        if (finishedAll) {
+            levelIndicator.textContent = `tema ${currentLevelIndex}/${totalLevels} ⭐️`;
+        } else {
+            levelIndicator.textContent = `tema ${currentLevelIndex}/${totalLevels}`;
         }
 
-
-        // Check if all values in valueList are present in filterList
-
-
-        const randomFile = filteredList[Math.floor(Math.random() * filteredList.length)];
-
-
-
+        localStorage.setItem('currentLevel', currentLevel); // Save it as the current level
         // Create the SVG element
         lineOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         lineOverlay.id = "line-overlay";
@@ -59,7 +110,7 @@ async function loadData() {
         // Append SVG and matrix div to the game container
         gameContainer.appendChild(lineOverlay);
         gameContainer.appendChild(matrixElement);
-        const response = await fetch(`static/levels/${randomFile}.json`);
+        const response = await fetch(`static/levels/${currentLevel}.json`);
         const data = await response.json();
         
         // Assign data to variables
@@ -68,15 +119,18 @@ async function loadData() {
         theme = data.theme 
 
         matchedSequenceThemeHeading = document.getElementById("theme_header")
-        matchedSequenceThemeHeading.textContent = `Tema : ${theme}`
+        matchedSequenceThemeHeading.textContent = `Tema : ${theme.replace("_", " ")}`
 
+        // Load level state
+        const levelState = StateManager.loadLevelState(theme);
+        const matchedSequencesIndices = levelState.matchedSequences || [];
 
-        sequencesData = predefinedSequences.map(sequence => {
+        sequencesData = predefinedSequences.map((sequence, index) => {
             const lettersInSequence = sequence.map(pos => letters[pos.row][pos.col]).join('');
             return {
                 positions: sequence,
                 letters: lettersInSequence,
-                matched: false
+                matched: matchedSequencesIndices.includes(index)
             };
         });
 
@@ -99,6 +153,9 @@ async function loadData() {
                 matrixElement.appendChild(cell);
             });
         });
+
+        // Remove unused letters on load
+        removeUnusedLettersOnLoad();
 
         // Event listener to detect clicks outside the matrix
         document.body.addEventListener('click', function(event) {
@@ -134,13 +191,13 @@ async function loadData() {
 loadData()
 
 
+
 function renderSequencesList() {
     sequencesList.innerHTML = ''; // Clear the list
 
     sequencesData.forEach(sequence => {
         const listItem = document.createElement('li');
         listItem.classList.add('sequence-item');
-
         if (sequence.matched) {
             // Display the sequence letters in a green bubble
             listItem.textContent = sequence.letters;
@@ -152,6 +209,60 @@ function renderSequencesList() {
         }
 
         sequencesList.appendChild(listItem);
+    });
+}
+
+function animateSequenceToItem(sequence, listItemIndex, options = {}) {
+    const listItem = document.querySelectorAll("#sequences-list .sequence-item")[listItemIndex];
+    const letters = [];
+
+    // Set default options if not provided
+    const {
+        animationDuration = 1500,  // duration of the move animation in ms
+        delayBetweenLetters = 100  // delay between each letter animation in ms
+    } = options;
+
+    sequence.forEach((step, index) => {
+        // Get the cell in the matrix
+        const cell = document.querySelector(
+            `.cell[data-row="${step.row}"][data-col="${step.col}"]`
+        );
+        
+        // Clone the letter element to animate
+        const letter = document.createElement("div");
+        letter.className = "animated-letter";
+        letter.innerText = cell.getAttribute("data-letter");
+
+        // Position the letter in the center of the cell's position
+        const cellRect = cell.getBoundingClientRect();
+        const listItemRect = listItem.getBoundingClientRect();
+
+        // Adjust the letter's initial position to be centered within the cell
+        letter.style.left = `${cellRect.left + cellRect.width / 2}px`;
+        letter.style.top = `${cellRect.top + cellRect.height / 2}px`;
+        letter.style.transform = "translate(-50%, -50%)"; // Center within its initial position
+        letter.style.opacity = 1;  // Start fully visible
+        document.body.appendChild(letter); 
+
+        // Calculate the offset to center the letter in the target list item
+        const translateX = listItemRect.left + listItemRect.width / 2 - (cellRect.left + cellRect.width / 2);
+        const translateY = listItemRect.top + listItemRect.height / 2 - (cellRect.top + cellRect.height / 2);
+
+        // Set animation duration dynamically
+        letter.style.transition = `transform ${animationDuration / 1000}s ease, opacity ${animationDuration / 1000}s ease`;
+
+        // Animate the letter to the centered position in the list item and fade it out
+        setTimeout(() => {
+            letter.style.transform = `translate(${translateX}px, ${translateY}px)`;
+            letter.style.opacity = 0;  // Start fading during movement
+        }, delayBetweenLetters * index);
+
+        // Remove letter after animation completes
+        setTimeout(() => {
+            document.body.removeChild(letter);
+        }, animationDuration + delayBetweenLetters * index);
+
+        letters.push(cell.getAttribute("data-letter"));
     });
 }
 
@@ -337,6 +448,11 @@ function checkSequence() {
             // Sequence matched
             sequence.matched = true;
 
+            // Update the level state and save it
+            const levelState = StateManager.loadLevelState(theme);
+            levelState.matchedSequences.push(i);
+            StateManager.saveLevelState(theme, levelState);
+
             // Remove letters from the matrix if they are not used in other sequences
             removeUnusedLetters(selectedPositions);
 
@@ -347,8 +463,10 @@ function checkSequence() {
             renderSequencesList();
 
             // Check if all sequences are matched
-            checkWinCondition();
-
+            isWon = checkWinCondition();
+            if(!isWon){
+                animateSequenceToItem(sequence.positions,i)
+            }
             break; // Exit the loop since we've found a match
         }
     }
@@ -393,12 +511,15 @@ const interval = setInterval(function() {
 
 function displayWinMessage() {
     const gameContainer = document.getElementById('game-container');
+    const winMessageContainer = document.getElementById('win-message');
 
     // Clear the game container
-    gameContainer.innerHTML = `
+    gameContainer.innerHTML = ''
+    
+    winMessageContainer.innerHTML = `
         <div id="win-message">
-            <h1> Yay! du klarade nivån, duktigt! <span class="emoji">🎉</span><span class="emoji">🎉</span><span class="emoji">🎉</span></h1>
-            <button id="load-data-button" class="replay_button">Spela igen</button>
+            <h1> Du klarade temat!</h1>
+            <button id="load-data-button" class="replay_button">Spela nästa</button>
         </div>
     `;
 
@@ -418,7 +539,11 @@ function displayWinMessage() {
         localStorage.setItem(clearedLevelsListName, JSON.stringify(clearedLevelsList));
     }
 
-
+    // Remove level state after completion
+    const levelsState = StateManager.getLevelsState();
+    delete levelsState[theme];
+    StateManager.saveLevelsState(levelsState);
+    
     // Add an event listener to the button to call loadData when clicked
     const loadDataButton = document.getElementById('load-data-button');
     loadDataButton.addEventListener('click', loadData);
@@ -433,6 +558,7 @@ function checkWinCondition() {
         // Display 'Yay, you won!' message
         displayWinMessage();
     }
+    return allMatched
 }
 
 function removeUnusedLetters(matchedPositions) {
@@ -447,11 +573,42 @@ function removeUnusedLetters(matchedPositions) {
         if (!isUsedElsewhere) {
             const cell = document.querySelector(`.cell[data-row='${pos.row}'][data-col='${pos.col}']`);
             cell.classList.add('removed');
-            cell.textContent = '';
+            cell.style.animation = 'shrink 1s forwards';
+            cell.style.backgroundColor = '#f0f0f0';
+            cell.addEventListener('animationend', () => {
+                cell.textContent = '';
+            }, { once: true });
         }
     });
 }
 
+function removeUnusedLettersOnLoad() {
+    // Collect all positions used in unmatched sequences
+    const positionsInUnmatchedSequences = new Set();
+    sequencesData.forEach(sequence => {
+        if (!sequence.matched) {
+            sequence.positions.forEach(pos => {
+                positionsInUnmatchedSequences.add(`${pos.row},${pos.col}`);
+            });
+        }
+    });
+
+    // Go through all cells in the matrix and remove those not in positionsInUnmatchedSequences
+    letters.forEach((row, rowIndex) => {
+        row.forEach((letter, colIndex) => {
+            const posKey = `${rowIndex},${colIndex}`;
+            if (!positionsInUnmatchedSequences.has(posKey)) {
+                // Remove this cell
+                const cell = document.querySelector(`.cell[data-row='${rowIndex}'][data-col='${colIndex}']`);
+                if (cell) {
+                    cell.textContent = '';
+                    cell.style.opacity = 0
+                    cell.classList.add('removed');
+                }
+            }
+        });
+    });
+}
 
 // Helper function to compare arrays of positions
 function arraysEqual(a1, a2) {
@@ -463,3 +620,40 @@ function arraysEqual(a1, a2) {
     }
     return true;
 }
+
+
+// Get buttons and overlays
+const aboutBtn = document.getElementById('about-btn');
+const howToBtn = document.getElementById('how-to-btn');
+const aboutOverlay = document.getElementById('about-overlay');
+const howToOverlay = document.getElementById('how-to-overlay');
+const closeButtons = document.querySelectorAll('.close-btn');
+
+// Show About overlay
+aboutBtn.addEventListener('click', () => {
+    aboutOverlay.style.display = 'flex';
+});
+
+// Show How-To overlay
+howToBtn.addEventListener('click', () => {
+    howToOverlay.style.display = 'flex';
+});
+
+// Hide overlay when close button is clicked
+closeButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+        const targetOverlay = document.getElementById(e.target.dataset.target);
+        if (targetOverlay) {
+            targetOverlay.style.display = 'none';
+        }
+    });
+});
+
+// Hide overlay if user clicks outside of the content
+document.querySelectorAll('.overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.style.display = 'none';
+        }
+    });
+});

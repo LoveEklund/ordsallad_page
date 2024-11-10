@@ -2,8 +2,9 @@
     "avilable_levels": [
         "frukter",
         "djur",
-        "i_grönsaksdisken",
         "kläder",
-        "möbler"
+        "möbler",
+        "i_grönsaksdisken",
+        "har_katter"
     ]
 }

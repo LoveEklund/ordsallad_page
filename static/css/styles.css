@@ -1,7 +1,7 @@
 /* Apply sans-serif font to all text on the page */
 body {
     font-family: Arial, Helvetica, sans-serif;
-    overflow: hidden; /* Disable scrolling on the body */
+    padding-top: 50px;
     /* Optional: You can set a base font size or other font properties here */
     /* font-size: 16px; */
 }
@@ -10,7 +10,7 @@ body {
 #game-container {
     position: relative;
     width: max-content;
-    margin: 50px auto;
+    margin: 10px auto;
 }
 
 /* SVG overlay */
@@ -31,6 +31,7 @@ body {
     grid-gap: 5px;
     z-index: 1;
     touch-action: none;
+    overflow: hidden; /* Disable scrolling on the body */
 }
 
 /* Cell styles */
@@ -39,6 +40,7 @@ body {
     width: 50px;
     height: 50px;
     background-color: #f0f0f0;
+    color:rgb(69, 69, 69);
     text-align: center;
     font-size: 24px;
     user-select: none;
@@ -68,7 +70,7 @@ body {
 }
 
 #matched-sequences {
-    margin: 20px auto; /* Center the section */
+    margin: 10px auto; /* Center the section */
     text-align: center; /* Center the text inside */
     width: fit-content; /* Adjust width to fit content */
 }
@@ -77,10 +79,6 @@ body {
     margin: 20px auto; /* Center the section */
     text-align: center; /* Center the text inside */
     width: fit-content; /* Adjust width to fit content */
-}
-
-.cell.selected {
-    /* Optionally, add a subtle border */
 }
 
 .cell.removed {
@@ -105,65 +103,192 @@ body {
     display: inline-block;
     padding: 10px 20px;
     border-radius: 25px;
-    background-color: grey;
-    color: white;
+    color: rgb(69, 69, 69);
     font-size: 18px;
     text-align: center;
+    font-weight: bold;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 600px) {
+    #sequences-list {
+        margin: 10px auto;
+        gap: 5px;
+    }
+
+    .sequence-item {
+        padding: 8px 16px;
+        font-size: 16px;
+        border-radius: 20px;
+    }
+}
+
+@media (max-width: 400px) {
+    #sequences-list {
+        margin: 5px auto;
+        gap: 3px;
+    }
+
+    .sequence-item {
+        padding: 6px 12px;
+        font-size: 14px;
+        border-radius: 18px;
+    }
+}
+
+
+
+/* Unmatched sequences */
+.sequence-item.unmatched {
+    background-color: rgb(214, 214, 214);
+}
+
+/* Matched sequences */
+.sequence-item.matched {
+    background-color: rgb(20, 188, 20);
+}
+
+@keyframes shrink {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0;
+    }
+}
+
+
+
+#win-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+#win-message h1 {
+    font-size: 48px;
+    color: #4a4a4a;
+    font-weight: bold;
+    line-height: 1.2;
 }
 
 .replay_button {
     display: inline-block;
     padding: 10px 20px;
     border-radius: 25px;
-    background-color: yellow;
+    background-color: blue;
     color: white;
     font-size: 18px;
     text-align: center;
-    border: none; /* Remove default border */
-    cursor: pointer; /* Change cursor to pointer on hover */
-    transition: background-color 0.3s ease; /* Add a transition for background color */
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
 .replay_button:hover {
-    background-color: yellowgreen; /* Change color on hover */
+    background-color: lightblue;
 }
 
-
-/* Unmatched sequences */
-.sequence-item.unmatched {
-    background-color: grey;
-}
-
-/* Matched sequences */
-.sequence-item.matched {
-    background-color: green;
-}
-.cell.removed::before {
-    content: '';
-}
-
-#win-message {
-    text-align: center;
-    margin-top: 100px;
-}
-
-#win-message h1 {
-    font-size: 48px;
-    color: #ff6600; /* Choose any color you like */
+/* Animation styles */
+.animated-letter {
+    position: absolute;
+    font-size: 24px;
+    color: black;
     font-weight: bold;
-    line-height: 1.2;
+    transition: transform ease, opacity ease; /* Duration handled by JavaScript */
 }
 
-@keyframes emojiBounce {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-20px);
+@keyframes fadeOut {
+    to {
+        opacity: 0;
     }
 }
 
-#win-message h1 span.emoji {
-    display: inline-block;
-    animation: emojiBounce 1s infinite;
+.main-content {
+    margin-top: 50px; /* Adjust this value to match the height of your header */
+}
+
+/* Header styling */
+.page-header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 50px;
+    background-color: #f9f9f9;
+    padding: 10px 0; /* Slightly thicker padding for header */
+    display: flex;
+    justify-content: center;
+    gap: 15px; /* Space between elements */
+    align-items: center;
+    z-index: 100;
+}
+
+
+
+/* Header button styling */
+.header-button {
+    padding: 6px 16px;
+    border-radius: 25px;
+    color: rgb(69, 69, 69);
+    font-size: 16px;
+    font-weight: bold;
+    background-color: #f0f0f0;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.header-button:hover {
+    background-color: #e0e0e0;
+    transform: scale(1.05);
+}
+
+/* Level Indicator styling */
+.level-indicator {
+    font-size: 12px;
+    font-weight: bold;
+    color: rgb(69, 69, 69);
+}
+
+/* Additional styling for the overlay and content remains the same */
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.overlay-content {
+    background-color: white;
+    padding: 20px;
+    max-width: 500px;
+    width: 80%;
+    text-align: center;
+    border-radius: 8px;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.how-to-gif {
+    max-width: 100%;
+    height: auto;
+    margin-top: 15px;
+    border-radius: 8px;
 }

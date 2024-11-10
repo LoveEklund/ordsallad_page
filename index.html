@@ -3,22 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ordsallad</title>
+    <title>Ordröra</title>
     <link rel="stylesheet" href="static/css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     </head>
 <body>
-    <div id="win-all-message"></div>
-    <div id="game-container">
+    <header class="page-header">
+        <h1>Ordröra</h1>
+        <button id="about-btn" class="header-button">Om</button>
+        <button id="how-to-btn" class="header-button">Hur</button>
+        <span id="level-indicator" class="level-indicator"></span>
+    </header>
+    <!-- Main Content with margin adjustment -->
+    <div class="main-content">
+        <div id="win-all-message"></div>
+        <div id="win-message"></div>
+        <div id="game-container"></div>
+        <div id="matched-sequences">
+            <h2 id="theme_header"></h2>
+            <ul id="sequences-list"></ul>
+        </div>
     </div>
-    <div id="matched-sequences">
-        <h2 id = "theme_header"></h2>
-        <ul id = "sequences-list"></ul>
+
+        <!-- About Overlay structure -->
+    <!-- Overlay modal structure -->
+    <div id="about-overlay" class="overlay">
+        <div class="overlay-content">
+            <span class="close-btn" data-target="about-overlay">&times;</span>
+            <h2>Om Ordröra</h2>
+            <p>Detta är ett hobby projekt utvecklat av Love Eklund, har du frågor eller något så nås jag på lovefeklund@gmail.com</p>
+        </div>
+    </div>
+    
+    <!-- How-To Overlay structure -->
+    <div id="how-to-overlay" class="overlay">
+        <div class="overlay-content">
+            <span class="close-btn" data-target="how-to-overlay">&times;</span>
+            <h2 class="how-to-message">Hur spelar jag ordröra</h2>
+            <img src="static/images/how_to.gif" alt="How To Play GIF" class="how-to-gif">
+            <p>Målet med ordröra är att hitta orden som finns i röran.
+                Om en bokstav är kvar så ska den användas i ett ord.
+                Lycka till!
+            </p>
+        </div>
     </div>
 
 <script src="static/js/script.js"></script>
-
 
 </body>
 </html>
