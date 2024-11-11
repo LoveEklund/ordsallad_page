@@ -202,7 +202,7 @@ function renderSequencesList() {
             listItem.classList.add('matched');
         } else {
             // Display the number of letters in a grey bubble
-            listItem.textContent = sequence.letters.length + " bokstäver";
+            listItem.textContent =  " ".repeat(Math.ceil(((sequence.letters.length - 1) / 2 )))+ sequence.letters.length + " ".repeat(Math.ceil(((sequence.letters.length - 1)/2))); 
             listItem.classList.add('unmatched');
         }
 
@@ -265,13 +265,14 @@ function animateSequenceToItem(sequence, listItemIndex, options = {}) {
 }
 
 // Function to draw the line through selected cells
-function drawLineThroughSelectedCells() {
+async function drawLineThroughSelectedCells() {
     // Clear previous lines
     while (lineOverlay.firstChild) {
         lineOverlay.removeChild(lineOverlay.firstChild);
     }
 
-    if (selectedCells.length === 0) return
+    if (selectedCells.length === 0){
+        return}
 
     if (selectedCells.length === 1) {
         // Draw a line around the borders of the single selected cell
@@ -396,13 +397,8 @@ function selectCell(cell) {
         selectCell(cell);
     }
 
-    // Draw the line through selected cells
-    drawLineThroughSelectedCells();
-    setTimeout(() => {
-        checkSequence();
-      }, 500);
-    // Check for matching sequences
-    
+    // Check for matching sequences and draw line
+    checkSequence();
 }
 
 // Function to reset selection
@@ -434,8 +430,11 @@ function canSelectCell(cell) {
     return Math.abs(row - lastRow) <= 1 && Math.abs(col - lastCol) <= 1;
 }
 
-function checkSequence() {
+async function checkSequence() {
+
+    await drawLineThroughSelectedCells()
     if (selectedCells.length === 0) return;
+
 
     const selectedPositions = selectedCells.map(cell => ({
         row: parseInt(cell.dataset.row),
@@ -445,6 +444,11 @@ function checkSequence() {
     for (let i = 0; i < sequencesData.length; i++) {
         const sequence = sequencesData[i];
         if (!sequence.matched && arraysEqual(sequence.positions, selectedPositions)) {
+            // to handle the drawing
+            showInteractionBlocker();
+            await new Promise(resolve => setTimeout(resolve, 150));
+            hideInteractionBlocker();
+
             // Sequence matched
             sequence.matched = true;
 
@@ -512,15 +516,14 @@ const interval = setInterval(function() {
 function displayWinMessage() {
     const gameContainer = document.getElementById('game-container');
     const winMessageContainer = document.getElementById('win-message');
+    // Add the fade-out class to the game container
+    gameContainer.innerHTML = '';
 
-    // Clear the game container
-    gameContainer.innerHTML = ''
-    
     winMessageContainer.innerHTML = `
-        <div id="win-message">
-            <h1> Du klarade temat!</h1>
-            <button id="load-data-button" class="replay_button">Spela nästa</button>
-        </div>
+    <div id="win-message" class="hidden">
+        <h1> Du klarade temat!</h1>
+        <button id="load-data-button" class="replay_button">Spela nästa</button>
+    </div>
     `;
 
     // Check if the key exists in localStorage
@@ -528,7 +531,7 @@ function displayWinMessage() {
         // If the key doesn't exist, initialize it as an empty list (array)
         localStorage.setItem(clearedLevelsListName, JSON.stringify([]));
     }
-
+    console.log("outside of here")
     let clearedLevelsList = JSON.parse(localStorage.getItem(clearedLevelsListName));
     // Check if the value is already in the list
     if (!clearedLevelsList.includes(theme)) {
@@ -659,3 +662,11 @@ document.querySelectorAll('.overlay').forEach(overlay => {
         }
     });
 });
+
+function showInteractionBlocker() {
+    document.getElementById('interactionBlocker').style.display = 'block';
+}
+
+function hideInteractionBlocker() {
+    document.getElementById('interactionBlocker').style.display = 'none';
+}
