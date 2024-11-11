@@ -81,13 +81,11 @@ async function loadData(load_random) {
             filteredList = levels.filter(level => !clearedLevels.includes(level));
         }
         // Check for a currently played level
-        let currentLevel = localStorage.getItem('currentLevel');    
+        let currentLevel = localStorage.getItem('currentLevel');  
         // If no current level, pick the next level from filteredList
-        if (!currentLevel || !filteredList.includes(currentLevel)) {
+        if (!currentLevel) {
             currentLevel = filteredList[filteredList.length - 1];
-        } else {
-            currentLevel = levels[levels.length - 1]
-        }
+        } 
         let currentLevelIndex = levels.indexOf(currentLevel) + 1 
 
         const levelIndicator = document.getElementById('level-indicator');
@@ -400,9 +398,11 @@ function selectCell(cell) {
 
     // Draw the line through selected cells
     drawLineThroughSelectedCells();
-
+    setTimeout(() => {
+        checkSequence();
+      }, 500);
     // Check for matching sequences
-    checkSequence();
+    
 }
 
 // Function to reset selection
@@ -543,6 +543,8 @@ function displayWinMessage() {
     const levelsState = StateManager.getLevelsState();
     delete levelsState[theme];
     StateManager.saveLevelsState(levelsState);
+
+    localStorage.removeItem("currentLevel")
     
     // Add an event listener to the button to call loadData when clicked
     const loadDataButton = document.getElementById('load-data-button');
